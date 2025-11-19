@@ -1,75 +1,145 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { memo } from 'react';
+import { useRef, useEffect, memo } from 'react';
 
 interface WaveVisualizerProps {
   isPlaying: boolean;
   color: string;
+  frequencyData: Uint8Array;
 }
 
-export const WaveVisualizer = memo(function WaveVisualizer({ isPlaying, color }: WaveVisualizerProps) {
-  // Reduced to 24 bars for better performance
-  const bars = Array.from({ length: 24 }, (_, i) => {
-    const heights = [30, 50, 70, 90, 95, 90, 70, 50];
-    const baseHeight = heights[i % heights.length];
-    const delay = i * 0.015;
+// Linear interpolation function for smooth animation
+function lerp(start: number, end: number, factor: number): number {
+  return start + (end - start) * factor;
+}
 
-    return {
-      id: i,
-      baseHeight,
-      delay,
+export const WaveVisualizer = memo(function WaveVisualizer({ 
+  isPlaying, 
+  color, 
+  frequencyData 
+}: WaveVisualizerProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previousHeightsRef = useRef<number[]>(new Array(48).fill(10));
+  const animationFrameRef = useRef<number | undefined>(undefined);
+  const lastDrawTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { 
+      alpha: true,
+      desynchronized: true, // Better performance for animations
+    });
+    if (!ctx) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap at 2x for performance
+    const rect = canvas.getBoundingClientRect();
+    
+    // Set canvas size accounting for device pixel ratio
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const barCount = 48;
+    const barWidth = rect.width / barCount;
+    const barGap = barWidth * 0.2;
+    const actualBarWidth = barWidth - barGap;
+    const maxHeight = rect.height * 0.9;
+
+    // Throttle drawing to 30fps for better performance
+    const draw = (currentTime: number) => {
+      const timeSinceLastDraw = currentTime - lastDrawTimeRef.current;
+      
+      if (timeSinceLastDraw >= 33) { // 30fps (~33ms)
+        // Clear canvas with transparency
+        ctx.clearRect(0, 0, rect.width, rect.height);
+
+        // Disable shadows by default for better performance
+        ctx.shadowBlur = 0;
+
+        for (let i = 0; i < barCount; i++) {
+          // Get frequency data for this bar
+          const freqValue = isPlaying && frequencyData[i] !== undefined ? frequencyData[i] : 0;
+          
+          // Normalize to 0-1 range and apply some scaling
+          const normalized = freqValue / 255;
+          const targetHeight = Math.max(10, normalized * maxHeight);
+          
+          // Smooth interpolation for fluid animation
+          const currentHeight = previousHeightsRef.current[i];
+          const newHeight = lerp(currentHeight, targetHeight, 0.25);
+          previousHeightsRef.current[i] = newHeight;
+
+          // Calculate position using integer math for better performance
+          const x = Math.floor(i * barWidth + barGap / 2);
+          const y = Math.floor(rect.height - newHeight);
+
+          // Simplified gradient - only create when needed
+          const intensity = newHeight / maxHeight;
+          if (intensity > 0.7) {
+            const gradient = ctx.createLinearGradient(x, y, x, rect.height);
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(0.4, color);
+            gradient.addColorStop(1, color + 'AA');
+            ctx.fillStyle = gradient;
+          } else {
+            // Use solid color for lower bars (much faster)
+            ctx.fillStyle = color;
+          }
+
+          // Draw bar with rounded top
+          ctx.beginPath();
+          ctx.roundRect(x, y, actualBarWidth, newHeight, [actualBarWidth / 2, actualBarWidth / 2, 0, 0]);
+          ctx.fill();
+        }
+        
+        lastDrawTimeRef.current = currentTime;
+      }
+
+      animationFrameRef.current = requestAnimationFrame(draw);
     };
-  });
+
+    lastDrawTimeRef.current = performance.now();
+    animationFrameRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, color]);
+
+  // Simplified fade out when not playing - no interval needed
+  useEffect(() => {
+    if (!isPlaying) {
+      // Fade handled by main draw loop, no extra timer needed
+      return;
+    }
+  }, [isPlaying]);
 
   return (
-    <motion.div
-      className="flex items-end justify-center gap-1 mb-8 h-24 relative"
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.3 }}
-    >
-      <motion.div
-        className="absolute inset-0 pointer-events-none"
+    <div className="relative mb-8 h-24 flex items-center justify-center">
+      {/* Simplified radial glow background - no dynamic animation */}
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-300"
         style={{
           background: `radial-gradient(ellipse at center, ${color}20, transparent 70%)`,
+          opacity: isPlaying ? 0.7 : 0.4,
         }}
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.4, 0.7, 0.4],
-        }}
-        transition={{ duration: 2, repeat: Infinity }}
       />
       
-      {bars.map((bar) => (
-        <motion.div
-          key={bar.id}
-          className="w-2 rounded-full relative"
-          style={{
-            background: `linear-gradient(to top, ${color}, ${color}CC)`,
-            boxShadow: `0 0 10px ${color}60`,
-            transform: 'translate3d(0,0,0)',
-          }}
-          animate={isPlaying ? {
-            height: [
-              `${bar.baseHeight * 0.3}px`,
-              `${bar.baseHeight + Math.random() * 20}px`,
-              `${bar.baseHeight * 0.5}px`,
-              `${bar.baseHeight + Math.random() * 15}px`,
-              `${bar.baseHeight * 0.3}px`,
-            ],
-          } : {
-            height: `${bar.baseHeight * 0.3}px`,
-          }}
-          transition={{
-            duration: 0.6 + Math.random() * 0.3,
-            repeat: isPlaying ? Infinity : 0,
-            delay: bar.delay,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </motion.div>
+      {/* Canvas visualizer */}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          willChange: isPlaying ? 'contents' : 'auto',
+        }}
+      />
+    </div>
   );
 });
-

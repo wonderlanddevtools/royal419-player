@@ -1,32 +1,27 @@
 import type { Metadata } from "next";
-import { Inter, Permanent_Marker, Rock_Salt } from "next/font/google";
+import { Inter, Syne, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { CustomCursor } from "@/components/CustomCursor";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  variable: "--font-inter",
   display: "swap",
+  weight: ['400', '500', '600'],
 });
 
-const geistMono = Inter({
+const syne = Syne({
   subsets: ["latin"],
-  variable: "--font-geist-mono",
+  variable: "--font-syne",
   display: "swap",
+  weight: ['600', '700', '800'],
 });
 
-const permanentMarker = Permanent_Marker({
-  weight: "400",
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-marker",
+  variable: "--font-space-grotesk",
   display: "swap",
-});
-
-const rockSalt = Rock_Salt({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-rock-salt",
-  display: "swap",
+  weight: ['500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -53,7 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${geistMono.variable} ${permanentMarker.variable} ${rockSalt.variable} antialiased`}
+        className={`${inter.variable} ${syne.variable} ${spaceGrotesk.variable} antialiased font-inter`}
       >
         <CustomCursor />
         {children}

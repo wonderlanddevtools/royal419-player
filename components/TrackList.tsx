@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { memo } from 'react';
 import type { ExtendedTrack } from '@/lib/tracks';
 
 interface TrackListProps {
@@ -17,7 +18,7 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function TrackList({ tracks, currentTrack, isPlaying, onTrackSelect, currentProgress = 0 }: TrackListProps) {
+export const TrackList = memo(function TrackList({ tracks, currentTrack, isPlaying, onTrackSelect, currentProgress = 0 }: TrackListProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -88,10 +89,9 @@ export function TrackList({ tracks, currentTrack, isPlaying, onTrackSelect, curr
                   transition={{ duration: 0.5 }}
                 >
                   <span
-                    className="text-white"
+                    className="text-white font-syne font-bold"
                     style={{
                       fontSize: '16px',
-                      fontWeight: '800',
                       textShadow: isActive ? `0 0 10px ${track.color}` : 'none',
                     }}
                   >
@@ -102,10 +102,10 @@ export function TrackList({ tracks, currentTrack, isPlaying, onTrackSelect, curr
                 {/* Track title */}
                 <div className="flex-1">
                   <motion.h3
-                    className="text-white"
+                    className="text-white font-space-grotesk"
                     style={{
                       fontSize: isActive ? '18px' : '17px',
-                      fontWeight: isActive ? '800' : '600',
+                      fontWeight: isActive ? '700' : '600',
                       textShadow: isActive 
                         ? `2px 2px 0px ${track.color}, 0 0 20px ${track.color}80`
                         : '1px 1px 2px rgba(0,0,0,0.5)',
@@ -210,5 +210,5 @@ export function TrackList({ tracks, currentTrack, isPlaying, onTrackSelect, curr
       })}
     </motion.div>
   );
-}
+});
 

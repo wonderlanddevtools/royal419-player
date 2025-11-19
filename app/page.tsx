@@ -4,11 +4,15 @@ import { useState, useEffect } from 'react';
 import { CDCase } from '@/components/CDCase';
 import { StarField } from '@/components/StarField';
 import { SparkleEffect } from '@/components/SparkleEffect';
+import { AlbumArtTransition } from '@/components/AlbumArtTransition';
 import { getExtendedTracks } from '@/lib/tracks';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number }>>([]);
   const [scale, setScale] = useState(1);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const tracks = getExtendedTracks();
 
   useEffect(() => {
@@ -50,14 +54,30 @@ export default function Home() {
     }, 1200);
   };
 
+  const currentTrack = tracks[currentTrackIndex];
+
   return (
     <div 
-      className="fixed inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center"
-      style={{ 
-        background: 'radial-gradient(ellipse at center, #6B4FA3 0%, #4A3575 50%, #2D1F4A 100%)',
-      }}
+      className="fixed inset-0 w-full h-full overflow-hidden flex items-center justify-center"
       onClick={handleClick}
     >
+      {/* Dynamic background with track color */}
+      <motion.div
+        className="fixed inset-0"
+        animate={{
+          background: isPlayerOpen
+            ? `radial-gradient(ellipse at center, ${currentTrack.color}30 0%, #4A3575 50%, #2D1F4A 100%)`
+            : 'radial-gradient(ellipse at center, #6B4FA3 0%, #4A3575 50%, #2D1F4A 100%)',
+        }}
+        transition={{ duration: 1, ease: 'easeInOut' }}
+      />
+
+      {/* Album art transition background */}
+      <AlbumArtTransition 
+        currentTrack={currentTrack}
+        isVisible={isPlayerOpen}
+      />
+      
       <StarField />
       
       {sparkles.map(sparkle => (
@@ -77,7 +97,11 @@ export default function Home() {
         }}
       >
         <div className="relative z-10 flex flex-col items-center justify-center gap-8">
-          <CDCase tracks={tracks} />
+          <CDCase 
+            tracks={tracks}
+            onTrackChange={setCurrentTrackIndex}
+            onPlayerOpenChange={setIsPlayerOpen}
+          />
         </div>
       </div>
     </div>

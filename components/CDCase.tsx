@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CDDisc } from './CDDisc';
 import { PlayerUI } from './PlayerUI';
@@ -10,9 +10,11 @@ import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 
 interface CDCaseProps {
   tracks: ExtendedTrack[];
+  onTrackChange?: (index: number) => void;
+  onPlayerOpenChange?: (isOpen: boolean) => void;
 }
 
-export function CDCase({ tracks }: CDCaseProps) {
+export function CDCase({ tracks, onTrackChange, onPlayerOpenChange }: CDCaseProps) {
   const [isOpen, setIsOpen] = useState(false);
   const audioPlayer = useAudioPlayer();
 
@@ -24,6 +26,7 @@ export function CDCase({ tracks }: CDCaseProps) {
 
   const handleOpen = () => {
     setIsOpen(true);
+    onPlayerOpenChange?.(true);
     // Auto-play first track when opening if nothing is playing
     if (!audioPlayer.currentTrack) {
       audioPlayer.playTrack(tracks[0]);
@@ -32,6 +35,7 @@ export function CDCase({ tracks }: CDCaseProps) {
 
   const handleTrackSelect = (index: number) => {
     audioPlayer.playTrack(tracks[index]);
+    onTrackChange?.(index);
   };
 
   return (
@@ -44,21 +48,22 @@ export function CDCase({ tracks }: CDCaseProps) {
           width: '500px', 
           height: '450px', 
           transformStyle: 'preserve-3d',
+          backfaceVisibility: 'hidden',
         }}
         animate={{
-          rotateY: isOpen ? 0 : 0,
-          rotateX: isOpen ? 10 : 0,
-          z: isOpen ? 0 : 0,
+          transform: isOpen ? 'rotateX(10deg)' : 'rotateX(0deg)',
         }}
-        transition={{ duration: 0.8 }}
+        transition={{ 
+          duration: 0.4, 
+          ease: [0.4, 0.0, 0.2, 1] // Faster cubic-bezier
+        }}
       >
         
         {/* BACK TRAY (Static Base) */}
         <div 
-          className="absolute inset-0 bg-neutral-900 rounded-sm border border-white/10"
+          className="absolute inset-0 bg-neutral-900 rounded-sm border border-white/10 shadow-2xl"
           style={{
             transform: 'translateZ(-10px)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
           {/* Tray Texture/Plastic */}
@@ -93,22 +98,19 @@ export function CDCase({ tracks }: CDCaseProps) {
             transformOrigin: 'left',
             transformStyle: 'preserve-3d',
             zIndex: 20,
+            backfaceVisibility: 'hidden',
           }}
           initial={{ rotateY: 0 }}
           animate={{ 
             rotateY: isOpen ? -175 : 0,
           }}
           transition={{ 
-            type: 'spring',
-            stiffness: 60,
-            damping: 12,
-            mass: 0.8,
-            restDelta: 0.001
+            duration: 0.5,
+            ease: [0.4, 0.0, 0.2, 1], // Smooth cubic-bezier instead of spring
           }}
           onClick={!isOpen ? handleOpen : undefined}
           whileHover={!isOpen ? { 
             rotateY: -15,
-            boxShadow: '-20px 0 40px rgba(0,0,0,0.4)',
           } : {}}
         >
           {/* --- FRONT FACE (Album Art) --- */}
@@ -199,6 +201,8 @@ export function CDCase({ tracks }: CDCaseProps) {
             currentTrack={currentTrack}
             isPlaying={audioPlayer.isPlaying}
             progress={audioPlayer.currentTime}
+            isLoading={audioPlayer.isLoading}
+            frequencyData={audioPlayer.frequencyData}
             onPlayPause={audioPlayer.togglePlay}
             onNext={audioPlayer.playNext}
             onPrevious={audioPlayer.playPrevious}

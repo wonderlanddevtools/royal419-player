@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Track } from '@/lib/tracks';
 import { getNextTrack, getPreviousTrack } from '@/lib/tracks';
+import { useAudioAnalyzer } from './useAudioAnalyzer';
 
 interface UseAudioPlayerReturn {
   currentTrack: Track | null;
@@ -11,6 +12,7 @@ interface UseAudioPlayerReturn {
   duration: number;
   volume: number;
   isLoading: boolean;
+  frequencyData: Uint8Array;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -29,39 +31,97 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.8);
   const [isLoading, setIsLoading] = useState(false);
+  const audioAnalyzer = useAudioAnalyzer();
 
-  // Initialize audio element
+  // Initialize audio element ONCE
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.volume = volume;
       audioRef.current.preload = 'auto';
+      
+      // Connect audio analyzer
+      audioAnalyzer.connect(audioRef.current);
+      
+      console.log('Audio element initialized');
     }
 
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.src = '';
         audioRef.current = null;
       }
+      audioAnalyzer.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+  
+  // Update volume separately
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
   }, [volume]);
 
-  const play = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.play().catch((error) => {
-        console.error('Playback failed:', error);
-      });
+  const play = useCallback(async () => {
+    if (audioRef.current && !isLoading) {
+      try {
+        console.log('Attempting to play audio:', audioRef.current.src);
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          console.log('Audio playing successfully');
+        }
+      } catch (error) {
+        // Ignore abort errors - they're normal when switching tracks quickly
+        if ((error as Error).name !== 'AbortError') {
+          console.error('Playback failed:', error);
+          console.error('Audio element state:', {
+            src: audioRef.current.src,
+            readyState: audioRef.current.readyState,
+            networkState: audioRef.current.networkState,
+            paused: audioRef.current.paused,
+          });
+        }
+      }
     }
-  }, []);
+  }, [isLoading]);
 
   const playTrack = useCallback((track: Track) => {
-    if (!audioRef.current || !track.audioUrl) return;
+    if (!audioRef.current || !track.audioUrl) {
+      console.error('Cannot play track: audio element or URL missing');
+      return;
+    }
 
+    const audio = audioRef.current;
+    
+    console.log('Loading track:', track.title, track.audioUrl);
+    
+    // Pause current playback before loading new track
+    audio.pause();
+    
     setIsLoading(true);
     setCurrentTrack(track);
-    audioRef.current.src = track.audioUrl;
-    audioRef.current.load();
-    play();
+    audio.src = track.audioUrl;
+    
+    // Wait for audio to be ready before playing
+    const handleCanPlay = () => {
+      console.log('Audio ready to play');
+      audio.removeEventListener('canplay', handleCanPlay);
+      setIsLoading(false);
+      play();
+    };
+    
+    const handleError = (e: Event) => {
+      console.error('Error loading track:', e);
+      audio.removeEventListener('error', handleError);
+      setIsLoading(false);
+    };
+    
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('error', handleError);
+    audio.load();
   }, [play]);
 
   const playNext = useCallback(() => {
@@ -95,8 +155,12 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   }, [currentTrack, currentTime, playTrack, seek]);
 
   const pause = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
+    if (audioRef.current && !audioRef.current.paused) {
+      try {
+        audioRef.current.pause();
+      } catch (error) {
+        console.error('Pause failed:', error);
+      }
     }
   }, []);
 
@@ -121,8 +185,14 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     const audio = audioRef.current;
     if (!audio) return;
 
+    // Throttle timeupdate to 2x per second for better performance
+    let lastUpdate = 0;
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
+      const now = Date.now();
+      if (now - lastUpdate >= 500) { // Update every 500ms instead of ~250ms
+        setCurrentTime(audio.currentTime);
+        lastUpdate = now;
+      }
     };
 
     const handleDurationChange = () => {
@@ -185,6 +255,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     duration,
     volume,
     isLoading,
+    frequencyData: audioAnalyzer.frequencyData,
     play,
     pause,
     togglePlay,

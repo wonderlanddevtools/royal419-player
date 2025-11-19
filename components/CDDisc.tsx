@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { ExtendedTrack } from '@/lib/tracks';
 
 interface CDDiscProps {
@@ -11,7 +11,7 @@ interface CDDiscProps {
   onTrackSelect: (index: number) => void;
 }
 
-export function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDiscProps) {
+export const CDDisc = memo(function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDiscProps) {
   const [hoveredTrack, setHoveredTrack] = useState<number | null>(null);
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
@@ -45,26 +45,23 @@ export function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDis
         transformStyle: 'preserve-3d',
         perspective: '1000px',
         zIndex: 10,
+        backfaceVisibility: 'hidden',
       }}
       initial={{
         scale: 0.8,
         opacity: 0,
-        rotateY: -10,
       }}
       animate={{
         scale: 1,
         opacity: 1,
-        rotateY: 0,
       }}
       exit={{
         scale: 0.8,
         opacity: 0,
-        rotateY: -10,
       }}
       transition={{
-        type: 'spring',
-        stiffness: 200,
-        damping: 20,
+        duration: 0.4,
+        ease: 'easeOut',
       }}
     >
       <motion.div
@@ -75,7 +72,8 @@ export function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDis
           width: '400px', // Slightly smaller to fit nicely in the 500px case with margins
           height: '400px',
           transformStyle: 'preserve-3d',
-          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+          willChange: isPlaying ? 'transform' : 'auto', // Only during playback
         }}
         animate={{
           rotate: isPlaying ? 360 : 0,
@@ -84,12 +82,12 @@ export function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDis
         }}
         transition={{
           rotate: {
-            duration: 8, // Slower, more majestic spin
+            duration: 8,
             repeat: isPlaying ? Infinity : 0,
             ease: 'linear',
           },
-          rotateX: { type: 'spring', stiffness: 400, damping: 30 },
-          rotateY: { type: 'spring', stiffness: 400, damping: 30 },
+          rotateX: { duration: 0.2, ease: 'easeOut' },
+          rotateY: { duration: 0.2, ease: 'easeOut' },
         }}
       >
         {/* CD Shadow */}
@@ -128,62 +126,69 @@ export function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDis
             />
           </div>
 
-          {/* Holographic rainbow shimmer effect */}
+          {/* Simplified environment map reflection */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: `conic-gradient(from 0deg,
+                rgba(255,255,255,0.1),
+                rgba(200,220,255,0.12) 90deg,
+                rgba(255,255,255,0.08) 180deg,
+                rgba(255,220,200,0.12) 270deg,
+                rgba(255,255,255,0.1)
+              )`,
+              mixBlendMode: 'overlay',
+              opacity: 0.25,
+            }}
+          />
+
+          {/* Simplified holographic spectrum - single layer */}
           <motion.div
             className="absolute inset-0 rounded-full"
             style={{
               background: `conic-gradient(from 0deg,
-                rgba(255,0,0,0.15),
-                rgba(255,154,0,0.15),
-                rgba(208,222,33,0.15),
-                rgba(79,220,74,0.15),
-                rgba(63,218,216,0.15),
-                rgba(47,201,226,0.15),
-                rgba(28,127,238,0.15),
-                rgba(95,21,242,0.15),
-                rgba(186,12,248,0.15),
-                rgba(251,7,217,0.15),
-                rgba(255,0,0,0.15)
+                rgba(255,0,100,0.15),
+                rgba(255,200,0,0.15) 60deg,
+                rgba(0,255,150,0.15) 120deg,
+                rgba(0,150,255,0.15) 180deg,
+                rgba(150,0,255,0.15) 240deg,
+                rgba(255,0,150,0.15) 300deg,
+                rgba(255,0,100,0.15)
               )`,
               mixBlendMode: 'screen',
-              opacity: 0.7,
-              willChange: 'transform',
+              opacity: 0.5,
+              willChange: isPlaying ? 'transform' : 'auto',
             }}
             animate={{
               rotate: isPlaying ? -360 : 0,
             }}
             transition={{
-              duration: 5,
+              duration: 6,
               repeat: isPlaying ? Infinity : 0,
               ease: 'linear',
             }}
           />
 
-          {/* Secondary holographic layer */}
-          <motion.div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: 'conic-gradient(from 90deg, transparent, rgba(255,255,255,0.2), transparent, rgba(255,255,255,0.15), transparent)',
-              mixBlendMode: 'overlay',
-              willChange: 'transform',
-            }}
-            animate={{
-              rotate: isPlaying ? 360 : 0,
-            }}
-            transition={{
-              duration: 3,
-              repeat: isPlaying ? Infinity : 0,
-              ease: 'linear',
-            }}
-          />
-
-          {/* Disc surface reflection */}
+          {/* Simplified surface texture */}
           <div
             className="absolute inset-0 rounded-full pointer-events-none"
             style={{
               background: `
-                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 20%),
-                radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.3) 100%)
+                radial-gradient(circle at 35% 25%, rgba(255,255,255,0.02) 0%, transparent 1%),
+                radial-gradient(circle at 65% 70%, rgba(255,255,255,0.015) 0%, transparent 1%)
+              `,
+              mixBlendMode: 'overlay',
+              opacity: 0.3,
+            }}
+          />
+
+          {/* Disc surface reflection and depth mask */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{
+              background: `
+                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5) 0%, transparent 20%),
+                radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 35%, transparent 50%, rgba(0,0,0,0.1) 70%, rgba(0,0,0,0.35) 100%)
               `,
             }}
           />
@@ -211,19 +216,19 @@ export function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDis
             />
           </div>
 
-          {/* Rotating shimmer light effect */}
+          {/* Single simplified shimmer effect */}
           <motion.div
             className="absolute inset-0 rounded-full pointer-events-none"
             style={{
               background: 'linear-gradient(90deg, transparent 35%, rgba(255,255,255,0.4) 50%, transparent 65%)',
               mixBlendMode: 'overlay',
-              willChange: 'transform',
+              willChange: isPlaying ? 'transform' : 'auto',
             }}
             animate={{
               rotate: isPlaying ? 360 : 0,
             }}
             transition={{
-              duration: 2.5,
+              duration: 3,
               repeat: isPlaying ? Infinity : 0,
               ease: 'linear',
             }}
@@ -243,25 +248,16 @@ export function CDDisc({ currentTrack, isPlaying, tracks, onTrackSelect }: CDDis
           }}
         />
 
-        {/* Outer glow based on current track */}
-        <motion.div
-          className="absolute inset-0 rounded-full pointer-events-none"
-          animate={{
-            boxShadow: isPlaying
-              ? [
-                  `0 0 50px ${tracks[currentTrack].color}70`,
-                  `0 0 80px ${tracks[currentTrack].color}CC`,
-                  `0 0 50px ${tracks[currentTrack].color}70`,
-                ]
-              : `0 0 50px ${tracks[currentTrack].color}60`,
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: isPlaying ? Infinity : 0,
-            ease: 'easeInOut',
+        {/* Simplified outer glow */}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none transition-shadow duration-300"
+          style={{
+            boxShadow: isPlaying 
+              ? `0 0 60px ${tracks[currentTrack].color}80`
+              : `0 0 40px ${tracks[currentTrack].color}60`,
           }}
         />
       </motion.div>
     </motion.div>
   );
-}
+});

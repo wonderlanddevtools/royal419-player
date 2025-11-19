@@ -15,27 +15,30 @@ export function CustomCursor() {
   const [isHovering, setIsHovering] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Trail state
+  // Reduced trail state for better performance
   const [trail, setTrail] = useState<{x: number, y: number, id: number}[]>([]);
   const trailIdRef = useRef(0);
+  const lastTrailTimeRef = useRef(0);
+  const lastCursorUpdateRef = useRef(0);
 
   useEffect(() => {
     const moveCursor = (e: MouseEvent) => {
+      // Throttle cursor position updates to ~60fps max
+      const now = performance.now();
+      if (now - lastCursorUpdateRef.current < 16) return;
+      lastCursorUpdateRef.current = now;
+      
       cursorX.set(e.clientX - 16);
       cursorY.set(e.clientY - 16);
       
-      // Add trail particle occasionally
-      if (Math.random() > 0.7) {
+      // More aggressive trail throttling - 200ms and higher random threshold
+      if (now - lastTrailTimeRef.current > 200 && Math.random() > 0.85) {
+        lastTrailTimeRef.current = now;
         setTrail(prev => [
-            ...prev.slice(-15), // Keep last 15
+            ...prev.slice(-8), // Keep only last 8 for better performance
             { x: e.clientX, y: e.clientY, id: trailIdRef.current++ }
         ]);
       }
-      
-      // We can't easily check isVisible state here without triggering re-runs
-      // so we'll just set it to true if it might be false. 
-      // React optimizes state updates that don't change value.
-      setIsVisible(true);
     };
 
     const handleMouseDown = () => setIsHovering(true);
@@ -43,7 +46,11 @@ export function CustomCursor() {
     const handleMouseLeave = () => setIsVisible(false);
     const handleMouseEnter = () => setIsVisible(true);
 
-    window.addEventListener('mousemove', moveCursor);
+    // Set visible immediately
+    setIsVisible(true);
+
+    // Use passive listeners for better scrolling performance
+    window.addEventListener('mousemove', moveCursor, { passive: true });
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('mouseleave', handleMouseLeave);
@@ -56,21 +63,21 @@ export function CustomCursor() {
       document.removeEventListener('mouseleave', handleMouseLeave);
       document.removeEventListener('mouseenter', handleMouseEnter);
     };
-  }, [cursorX, cursorY]); // Removed isVisible dependency
+  }, [cursorX, cursorY]);
 
   if (!isVisible) return null;
 
   return (
     <>
-      {/* Stardust Trail */}
+      {/* Simplified Stardust Trail */}
       {trail.map((t) => (
         <motion.div
             key={t.id}
-            initial={{ opacity: 0.8, scale: Math.random() * 0.5 + 0.2 }}
-            animate={{ opacity: 0, scale: 0, y: 10 }}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0.6, scale: 0.3 }}
+            animate={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
             className="fixed w-2 h-2 bg-star-glow rounded-full pointer-events-none z-40"
-            style={{ left: t.x, top: t.y }}
+            style={{ left: t.x, top: t.y, willChange: 'opacity, transform' }}
         />
       ))}
 
@@ -80,14 +87,16 @@ export function CustomCursor() {
         style={{
           x: cursorXSpring,
           y: cursorYSpring,
+          willChange: 'transform',
         }}
       >
          <motion.div 
-            className={`w-full h-full rounded-full border-2 border-marker-lime transition-all duration-200 flex items-center justify-center`}
+            className={`w-full h-full rounded-full border-2 border-marker-lime flex items-center justify-center`}
             animate={{
                 scale: isHovering ? 0.8 : 1,
-                backgroundColor: isHovering ? 'rgba(204, 255, 0, 0.2)' : 'transparent',
+                backgroundColor: isHovering ? 'rgba(204, 255, 0, 0.2)' : 'rgba(0, 0, 0, 0)',
             }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
          >
             <div className="w-1 h-1 bg-marker-lime rounded-full" />
          </motion.div>

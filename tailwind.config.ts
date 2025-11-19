@@ -36,11 +36,10 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)'],
-        mono: ['var(--font-geist-mono)'],
-        marker: ['var(--font-marker)', 'cursive'],
-        rock: ['var(--font-rock-salt)', 'cursive'],
-        hand: ['Comic Sans MS', 'Comic Sans', 'cursive'], 
+        inter: ['var(--font-inter)', 'sans-serif'],
+        syne: ['var(--font-syne)', 'sans-serif'],
+        'space-grotesk': ['var(--font-space-grotesk)', 'sans-serif'],
+        sans: ['var(--font-inter)', 'sans-serif'],
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',

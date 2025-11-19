@@ -1,15 +1,19 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 import type { ExtendedTrack } from '@/lib/tracks';
 import { TrackList } from './TrackList';
+import { WaveVisualizer } from './WaveVisualizer';
+import { LoadingSkeleton } from './LoadingSkeleton';
 
 interface PlayerUIProps {
   tracks: ExtendedTrack[];
   currentTrack: number;
   isPlaying: boolean;
   progress: number;
+  isLoading?: boolean;
+  frequencyData?: Uint8Array;
   onPlayPause: () => void;
   onNext: () => void;
   onPrevious: () => void;
@@ -28,6 +32,8 @@ export function PlayerUI({
   currentTrack,
   isPlaying,
   progress,
+  isLoading = false,
+  frequencyData = new Uint8Array(48),
   onPlayPause,
   onNext,
   onPrevious,
@@ -53,34 +59,37 @@ export function PlayerUI({
         damping: 25,
         delay: 0.2,
       }}
+      style={{
+        willChange: 'transform, opacity',
+        backfaceVisibility: 'hidden',
+        transform: 'translateZ(0)',
+      }}
     >
-      <motion.div
+      <div
         className="backdrop-blur-2xl rounded-3xl p-10 border-2 relative overflow-hidden"
         style={{
           background: 'rgba(255, 255, 255, 0.06)',
-          borderColor: track.color + '30',
+          borderColor: track.color + '40',
           boxShadow: `
             0 30px 80px rgba(0,0,0,0.5),
             0 0 100px ${track.color}15,
             inset 0 0 80px ${track.color}08
           `,
+          backfaceVisibility: 'hidden',
         }}
-        animate={{
-          borderColor: [track.color + '30', track.color + '50', track.color + '30'],
-        }}
-        transition={{ duration: 3, repeat: Infinity }}
       >
-        {/* Animated background gradient */}
-        <motion.div
+        {/* Loading state overlay */}
+        <AnimatePresence>
+          {isLoading && <LoadingSkeleton />}
+        </AnimatePresence>
+
+        {/* Static background gradient - removed animation for performance */}
+        <div
           className="absolute inset-0 opacity-30 pointer-events-none"
           style={{
             background: `radial-gradient(ellipse at top left, ${track.color}20, transparent 50%),
                         radial-gradient(ellipse at bottom right, ${secondaryColor}20, transparent 50%)`,
           }}
-          animate={{
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 4, repeat: Infinity }}
         />
 
         {/* Current track title */}
@@ -97,10 +106,10 @@ export function PlayerUI({
           }}
         >
           <motion.h2
-            className="text-white mb-3 relative inline-block px-8 py-4"
+            className="text-white mb-3 relative inline-block px-8 py-4 font-space-grotesk"
             style={{
               fontSize: '38px',
-              fontWeight: '900',
+              fontWeight: '700',
               background: `linear-gradient(135deg, ${track.color} 0%, ${secondaryColor} 100%)`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -123,25 +132,21 @@ export function PlayerUI({
             
             <span className="relative">{track.title}</span>
             
-            <motion.div
+            <div
               className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 rounded-full"
               style={{
                 width: '80%',
                 background: `linear-gradient(90deg, transparent, ${track.color}, ${secondaryColor}, transparent)`,
+                opacity: 0.8,
               }}
-              animate={{
-                scaleX: [1, 1.1, 1],
-                opacity: [0.6, 1, 0.6],
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
             />
           </motion.h2>
           
           <motion.p
-            className="uppercase tracking-wider relative inline-block px-6 py-2"
+            className="uppercase tracking-wider relative inline-block px-6 py-2 font-syne"
             style={{
               fontSize: '22px',
-              fontWeight: '800',
+              fontWeight: '700',
               background: 'linear-gradient(135deg, #FFD700 0%, #FF69B4 50%, #00FFFF 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -154,60 +159,12 @@ export function PlayerUI({
           </motion.p>
         </motion.div>
 
-        {/* Optimized visualizer - 48 bars */}
-        {isPlaying && (
-          <motion.div
-            className="flex items-end justify-center gap-1 mb-8 h-24 relative"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `radial-gradient(ellipse at center, ${track.color}20, transparent 70%)`,
-              }}
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.4, 0.7, 0.4],
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            
-            {Array.from({ length: 48 }).map((_, i) => {
-              const heights = [30, 50, 70, 90, 95, 90, 70, 50];
-              const baseHeight = heights[i % heights.length];
-              const delay = i * 0.015;
-
-              return (
-                <motion.div
-                  key={i}
-                  className="w-2 rounded-full relative"
-                  style={{
-                    background: `linear-gradient(to top, ${track.color}, ${secondaryColor})`,
-                    boxShadow: `0 0 12px ${track.color}70`,
-                    willChange: 'height',
-                  }}
-                  animate={{
-                    height: [
-                      `${baseHeight * 0.3}px`,
-                      `${baseHeight + Math.random() * 20}px`,
-                      `${baseHeight * 0.5}px`,
-                      `${baseHeight + Math.random() * 15}px`,
-                      `${baseHeight * 0.3}px`,
-                    ],
-                  }}
-                  transition={{
-                    duration: 0.6 + Math.random() * 0.3,
-                    repeat: Infinity,
-                    delay: delay,
-                    ease: 'easeInOut',
-                  }}
-                />
-              );
-            })}
-          </motion.div>
-        )}
+        {/* Real-time audio-reactive visualizer */}
+        <WaveVisualizer 
+          isPlaying={isPlaying}
+          color={track.color}
+          frequencyData={frequencyData}
+        />
 
         {/* Progress Bar */}
         <div className="mb-12 relative group">
@@ -283,7 +240,7 @@ export function PlayerUI({
             currentProgress={progress}
           />
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
