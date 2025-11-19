@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Royal 419 - Interactive Web Player
 
-## Getting Started
+An interactive web music player for "Royal 419" - a satirical album themed around Nigerian prince email scams. This project creates a seamless digital extension of the physical print magazine experience.
 
-First, run the development server:
+## 🎵 Album
 
+**Royal 419! Music & Lyrics By! The Prince of Nigeria**
+
+Six tracks of untouchable romance, wire-transfer ballads, and routing number funk:
+
+1. International Luv (Western Union Mix)
+2. Urgent Opportunity
+3. Wire-Transferrable Love
+4. U Got the Routing #!
+5. Money Never Lies, but, I might
+6. Beneficiary Dreams
+
+## 🎨 Design
+
+The player matches the physical magazine design with:
+- Purple starry background (#3d2b7c)
+- Yellow accent color (#f9ed32)
+- Hand-drawn/artistic typography
+- Interactive 3D CD cover animation
+- Smooth, production-grade animations
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Backend**: Supabase (Storage)
+- **Animations**: Framer Motion + GSAP
+- **Deployment**: Vercel
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- Supabase account
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/wonderlanddevtools/royal419-player.git
+cd royal419-player
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edit `.env.local` and add your Supabase credentials.
 
-## Learn More
+4. Run the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+royal419-player/
+├── app/
+│   ├── layout.tsx          # Root layout
+│   └── page.tsx            # Main player page
+├── components/
+│   ├── Background.tsx      # Animated starry background
+│   ├── CDCover.tsx         # Interactive CD cover
+│   ├── AudioPlayer.tsx     # Custom audio controls
+│   └── TrackList.tsx       # Track selection UI
+├── hooks/
+│   └── useAudioPlayer.ts   # Audio state management
+├── lib/
+│   ├── supabase.ts         # Supabase client
+│   └── tracks.ts           # Track metadata
+└── styles/
+    └── animations.ts        # GSAP configs
+```
 
-## Deploy on Vercel
+## 🎯 Features
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- ✅ Interactive 3D CD cover animation
+- ✅ Custom audio player with full controls
+- ✅ Click-to-cue track selection
+- ✅ GSAP parallax background effects
+- ✅ Fully responsive (mobile, tablet, desktop)
+- ✅ Optimized for production
+- ✅ QR code accessible
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📱 QR Code Access
+
+Scan the QR code in the physical magazine to access the player directly from your mobile device.
+
+## 🎨 Design Credits
+
+Album artwork and design by The Prince of Nigeria for Superbloom House.
+
+## 📄 License
+
+All rights reserved.
+
+## 🔗 Links
+
+- [Live Demo](https://royal419-player.vercel.app) (Coming soon)
+- [Superbloom House](https://superbloom.house)
+
+---
+
+**ORDER NOW! ROYAL 419** 🎵
