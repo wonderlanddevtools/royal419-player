@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CDCoverProps {
@@ -8,8 +8,28 @@ interface CDCoverProps {
   onToggle: () => void;
 }
 
+interface Star {
+  left: string;
+  top: string;
+  delay: string;
+}
+
 export function CDCover({ isOpen, onToggle }: CDCoverProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [stars, setStars] = useState<Star[]>([]);
+
+  // Generate stars on client side only to avoid hydration mismatch
+  useEffect(() => {
+    const generatedStars: Star[] = [];
+    for (let i = 0; i < 50; i++) {
+      generatedStars.push({
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 3}s`,
+      });
+    }
+    setStars(generatedStars);
+  }, []);
 
   return (
     <div className="relative w-full max-w-md mx-auto mb-12">
@@ -49,14 +69,14 @@ export function CDCover({ isOpen, onToggle }: CDCoverProps) {
               <div className="absolute inset-0 bg-gradient-to-br from-purple-primary via-purple-dark to-purple-darker">
                 {/* Stars on cover */}
                 <div className="absolute inset-0">
-                  {[...Array(50)].map((_, i) => (
+                  {stars.map((star, i) => (
                     <div
                       key={i}
                       className="absolute w-1 h-1 bg-white rounded-full animate-twinkle"
                       style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `${Math.random() * 100}%`,
-                        animationDelay: `${Math.random() * 3}s`,
+                        left: star.left,
+                        top: star.top,
+                        animationDelay: star.delay,
                       }}
                     />
                   ))}
