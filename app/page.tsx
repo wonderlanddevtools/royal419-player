@@ -1,144 +1,85 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { CDCover } from '@/components/CDCover';
-import { AudioPlayer } from '@/components/AudioPlayer';
-import { TrackList } from '@/components/TrackList';
-import { useAudioPlayer } from '@/hooks/useAudioPlayer';
-import { tracks } from '@/lib/tracks';
+import { useState, useEffect } from 'react';
+import { CDCase } from '@/components/CDCase';
+import { StarField } from '@/components/StarField';
+import { SparkleEffect } from '@/components/SparkleEffect';
+import { getExtendedTracks } from '@/lib/tracks';
 
 export default function Home() {
-  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number }>>([]);
+  const [scale, setScale] = useState(1);
+  const tracks = getExtendedTracks();
 
-  const {
-    currentTrack,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    isLoading,
-    togglePlay,
-    seek,
-    setVolume,
-    playTrack,
-    playNext,
-    playPrevious,
-  } = useAudioPlayer();
+  useEffect(() => {
+    const handleResize = () => {
+      // Design targets a 1400x1000 canvas comfortably
+      const targetWidth = 1400;
+      const targetHeight = 1000;
+      
+      const scaleX = window.innerWidth / targetWidth;
+      const scaleY = window.innerHeight / targetHeight;
+      
+      // Use the smaller scale to fit both dimensions, but cap it at 1.2 to avoid over-scaling on huge screens
+      // Minimum scale ensures it doesn't get microscopic on mobile, though this design is desktop-first
+      const newScale = Math.min(Math.min(scaleX, scaleY) * 0.9, 1.2); 
+      
+      setScale(newScale);
+    };
 
-  const handleSelectTrack = (track: typeof tracks[0]) => {
-    // Auto-open player when track is selected
-    if (!isPlayerOpen) {
-      setIsPlayerOpen(true);
-    }
-    playTrack(track);
-  };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  const handleTogglePlayer = () => {
-    setIsPlayerOpen(!isPlayerOpen);
+  const handleClick = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const newSparkles = Array.from({ length: 16 }, (_, i) => ({
+      id: Date.now() + i,
+      x,
+      y,
+    }));
+    
+    setSparkles(prev => [...prev, ...newSparkles]);
+    
+    setTimeout(() => {
+      setSparkles(prev => prev.filter(s => !newSparkles.find(ns => ns.id === s.id)));
+    }, 1200);
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 py-12 relative z-10">
-      <div className="w-full max-w-4xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8"
-        >
-          <motion.h1
-            className="text-4xl md:text-6xl font-bold mb-4"
-            style={{
-              background: 'linear-gradient(135deg, #f9ed32 0%, #fff176 50%, #f9ed32 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              textShadow: '0 0 40px rgba(249, 237, 50, 0.3)',
-              fontFamily: 'Impact, "Arial Black", sans-serif',
-              letterSpacing: '0.05em',
-            }}
-            animate={{
-              textShadow: [
-                '0 0 40px rgba(249, 237, 50, 0.3)',
-                '0 0 60px rgba(249, 237, 50, 0.5)',
-                '0 0 40px rgba(249, 237, 50, 0.3)',
-              ],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          >
-            ROYAL 419
-          </motion.h1>
-          <p className="text-white/80 text-lg md:text-xl">
-            Six tracks of untouchable romance,
-            <br />
-            wire-transfer ballads, and routing number funk
-          </p>
-        </motion.div>
-
-        {/* CD Cover / Player */}
-        <CDCover isOpen={isPlayerOpen} onToggle={handleTogglePlayer} />
-
-        {/* Audio Player Controls */}
-        {isPlayerOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mb-12"
-          >
-            <AudioPlayer
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-              currentTime={currentTime}
-              duration={duration}
-              volume={volume}
-              isLoading={isLoading}
-              onTogglePlay={togglePlay}
-              onSeek={seek}
-              onVolumeChange={setVolume}
-              onNext={playNext}
-              onPrevious={playPrevious}
-            />
-          </motion.div>
-        )}
-
-        {/* Track Listing */}
-        {isPlayerOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            <TrackList
-              tracks={tracks}
-              currentTrack={currentTrack}
-              isPlaying={isPlaying}
-              onSelectTrack={handleSelectTrack}
-            />
-          </motion.div>
-        )}
-
-        {/* Footer */}
-        {!isPlayerOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="text-center mt-12 text-white/60 text-sm"
-          >
-            <p>Music & Lyrics By The Prince of Nigeria</p>
-            <p className="mt-2">
-              <span className="text-yellow-accent font-bold">ORDER NOW!</span>
-            </p>
-          </motion.div>
-        )}
+    <div 
+      className="fixed inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center"
+      style={{ 
+        background: 'radial-gradient(ellipse at center, #6B4FA3 0%, #4A3575 50%, #2D1F4A 100%)',
+      }}
+      onClick={handleClick}
+    >
+      <StarField />
+      
+      {sparkles.map(sparkle => (
+        <SparkleEffect key={sparkle.id} x={sparkle.x} y={sparkle.y} />
+      ))}
+      
+      <div 
+        style={{ 
+          transform: `scale(${scale})`,
+          width: '1400px',
+          height: '1000px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'transform 0.1s ease-out',
+        }}
+      >
+        <div className="relative z-10 flex flex-col items-center justify-center gap-8">
+          <CDCase tracks={tracks} />
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

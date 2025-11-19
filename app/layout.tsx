@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Permanent_Marker, Rock_Salt } from "next/font/google";
 import "./globals.css";
-import { Background } from "@/components/Background";
+import { CustomCursor } from "@/components/CustomCursor";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,6 +12,20 @@ const inter = Inter({
 const geistMono = Inter({
   subsets: ["latin"],
   variable: "--font-geist-mono",
+  display: "swap",
+});
+
+const permanentMarker = Permanent_Marker({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-marker",
+  display: "swap",
+});
+
+const rockSalt = Rock_Salt({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-rock-salt",
   display: "swap",
 });
 
@@ -39,9 +53,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistMono.variable} ${permanentMarker.variable} ${rockSalt.variable} antialiased`}
       >
-        <Background />
+        <CustomCursor />
         {children}
       </body>
     </html>

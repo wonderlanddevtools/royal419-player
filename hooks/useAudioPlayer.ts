@@ -35,8 +35,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio();
       audioRef.current.volume = volume;
-      
-      // Preload next track for seamless playback
       audioRef.current.preload = 'auto';
     }
 
@@ -47,6 +45,76 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       }
     };
   }, [volume]);
+
+  const play = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.play().catch((error) => {
+        console.error('Playback failed:', error);
+      });
+    }
+  }, []);
+
+  const playTrack = useCallback((track: Track) => {
+    if (!audioRef.current || !track.audioUrl) return;
+
+    setIsLoading(true);
+    setCurrentTrack(track);
+    audioRef.current.src = track.audioUrl;
+    audioRef.current.load();
+    play();
+  }, [play]);
+
+  const playNext = useCallback(() => {
+    if (!currentTrack) return;
+    const nextTrack = getNextTrack(currentTrack.id);
+    if (nextTrack) {
+      playTrack(nextTrack);
+    }
+  }, [currentTrack, playTrack]);
+
+  const seek = useCallback((time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  }, []);
+
+  const playPrevious = useCallback(() => {
+    if (!currentTrack) return;
+    
+    // If we're more than 3 seconds into the track, restart it
+    if (currentTime > 3) {
+      seek(0);
+      return;
+    }
+    
+    const previousTrack = getPreviousTrack(currentTrack.id);
+    if (previousTrack) {
+      playTrack(previousTrack);
+    }
+  }, [currentTrack, currentTime, playTrack, seek]);
+
+  const pause = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      pause();
+    } else {
+      play();
+    }
+  }, [isPlaying, play, pause]);
+
+  const setVolume = useCallback((newVolume: number) => {
+    const clampedVolume = Math.max(0, Math.min(1, newVolume));
+    setVolumeState(clampedVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = clampedVolume;
+    }
+  }, []);
 
   // Audio event handlers
   useEffect(() => {
@@ -108,77 +176,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('error', handleError);
     };
-  }, []);
-
-  const play = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.play().catch((error) => {
-        console.error('Playback failed:', error);
-      });
-    }
-  }, []);
-
-  const pause = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-  }, []);
-
-  const togglePlay = useCallback(() => {
-    if (isPlaying) {
-      pause();
-    } else {
-      play();
-    }
-  }, [isPlaying, play, pause]);
-
-  const seek = useCallback((time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  }, []);
-
-  const setVolume = useCallback((newVolume: number) => {
-    const clampedVolume = Math.max(0, Math.min(1, newVolume));
-    setVolumeState(clampedVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
-    }
-  }, []);
-
-  const playTrack = useCallback((track: Track) => {
-    if (!audioRef.current || !track.audioUrl) return;
-
-    setIsLoading(true);
-    setCurrentTrack(track);
-    audioRef.current.src = track.audioUrl;
-    audioRef.current.load();
-    play();
-  }, [play]);
-
-  const playNext = useCallback(() => {
-    if (!currentTrack) return;
-    const nextTrack = getNextTrack(currentTrack.id);
-    if (nextTrack) {
-      playTrack(nextTrack);
-    }
-  }, [currentTrack, playTrack]);
-
-  const playPrevious = useCallback(() => {
-    if (!currentTrack) return;
-    
-    // If we're more than 3 seconds into the track, restart it
-    if (currentTime > 3) {
-      seek(0);
-      return;
-    }
-    
-    const previousTrack = getPreviousTrack(currentTrack.id);
-    if (previousTrack) {
-      playTrack(previousTrack);
-    }
-  }, [currentTrack, currentTime, playTrack, seek]);
+  }, [playNext]); // Added playNext to dependency array to fix warning and potential closure staleness
 
   return {
     currentTrack,
@@ -197,4 +195,3 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     playPrevious,
   };
 }
-
