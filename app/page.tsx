@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CDCover } from '@/components/CDCover';
 import { AudioPlayer } from '@/components/AudioPlayer';
 import { TrackList } from '@/components/TrackList';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { tracks } from '@/lib/tracks';
-import { getTrackUrls } from '@/lib/supabase';
 
 export default function Home() {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
-  const [tracksWithUrls, setTracksWithUrls] = useState(tracks);
 
   const {
     currentTrack,
@@ -27,21 +25,6 @@ export default function Home() {
     playNext,
     playPrevious,
   } = useAudioPlayer();
-
-  // Load track URLs from Supabase on mount
-  useEffect(() => {
-    try {
-      const urls = getTrackUrls();
-      const updatedTracks = tracks.map((track) => ({
-        ...track,
-        audioUrl: urls[track.id as keyof typeof urls] || '',
-      }));
-      setTracksWithUrls(updatedTracks);
-    } catch (error) {
-      console.error('Failed to load track URLs:', error);
-      // If Supabase isn't configured, tracks will have empty URLs
-    }
-  }, []);
 
   const handleSelectTrack = (track: typeof tracks[0]) => {
     // Auto-open player when track is selected
@@ -133,7 +116,7 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.5 }}
           >
             <TrackList
-              tracks={tracksWithUrls}
+              tracks={tracks}
               currentTrack={currentTrack}
               isPlaying={isPlaying}
               onSelectTrack={handleSelectTrack}
