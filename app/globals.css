@@ -25,20 +25,17 @@
   --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  
-  body {
-    @apply bg-[var(--purple-primary)] text-white antialiased;
-    font-family: var(--font-sans);
-    overflow-x: hidden;
-  }
-  
-  html {
-    scroll-behavior: smooth;
-  }
+body {
+  background-color: var(--purple-primary);
+  color: white;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 @layer utilities {
