@@ -113,7 +113,8 @@ All rights reserved.
 
 ## 🔗 Links
 
-- [Live Demo](https://royal419-player.vercel.app) (Coming soon)
+- [Live Demo](https://royal419-player.vercel.app) - **Now Live!** 🎉
+- [GitHub Repository](https://github.com/wonderlanddevtools/royal419-player)
 - [Superbloom House](https://superbloom.house)
 
 ---
